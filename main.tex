@@ -3,7 +3,10 @@
 
 \usepackage[a4paper]{geometry}
 
-\title{Annif 4 dissertations\\Experimenten met Annif bij de KB}
+\usepackage[colorlinks=false]{hyperref}
+\usepackage{verbatim}
+
+\title{Annif 4 dissertations\\Experimenting with Annif at KB}
 \author{Sara Veldhoen}
 
 \begin{document}
@@ -16,35 +19,77 @@
 
 \section{Annif}
 
+See \url{https://github.com/NatLibFi/Annif/wiki/Getting-started} for information on how to set things up.
+
+
 \subsection{Projects}
 
-{\tt projects.cfg} contains settings per project (experimental setup)
+The file {\tt projects.cfg} (in the top directory of the repo Annif) contains settings per project (experimental setup). Structure:
+\begin{verbatim}[PROJECT_ID]
+name=readable name          # may contain whitespace
+language=en                 # I'm not sure what this does yet
+backend=tfidf               # what backend to use 
+analyzer=snowball(english)  # I'm not sure what this does yet
+limit=20                    # number of topics to produce
+vocab=yso-en                # vocabulary name (can be shared accross projects)
+\end{verbatim}
 
+Every project has a project identifier, that is used in calls to Annif. Every single trained model is associated with a single project identifier, so use a different project for every experimental setting (even though the project settings are the same). 
 \subsection{Commands}
 
-loadvoc
+Have annif list all possible commands entering {\tt annif --help}. The most relevant for this project are listed and explained below.
 
-analyzedir
+\begin{itemize}
+    \item {\bf loadvoc}: to load a subject vocabulary (thesaurus) for a specific project
+    
+    Usage: \verb|annif loadvoc [OPTIONS] PROJECT_ID SUBJECTFILE|
+    
+    The subject vocabulary ({\tt SUBJECTFILE}) must be formatted as described here: \url{https://github.com/NatLibFi/Annif/wiki/Subject-vocabulary-formats}
+    
+    \item  {\bf train}: train a model on training data
+    
+    Usage: \verb|annif train [OPTIONS] PROJECT_ID [PATHS]|
+    
+    The corpus ({\tt PATHS}) can be a single tsv file or a (zipped or regular) directory. See the guidelines here:
+    \url{https://github.com/NatLibFi/Annif/wiki/Document-corpus-formats}. So far, we use the \emph{Extended subject file format}.
+    
+    \item  {\bf analyzedir}: apply the trained model to all documents in a directory (e.g. the test data)
+            (analyze also exists for single files)
+            
+    Usage: \verb|annif analyzedir [OPTIONS] PROJECT_ID DIRECTORY|
+    
+    NB: the results are stored in the same directory as the input, in files with suffix {\tt .annif} (by default). For every document, the top {\tt N} subjects are listed, together with the score/ probability.
+    
+    \item {\bf eval}: evaluate a model against a gold standard. We might want to use our own evaluation (or extend the built in evaluation tool to our own needs)
+    
+    Usage: \verb|annif eval [OPTIONS] PROJECT_ID [PATHS]|
+            
+\end{itemize}
+
+
 
 
 
 \section{Data}
 
 
-\subsection{Brinkman Thesaurus}
-\subsubsection{Digestible for Annif}
+\subsection{Brinkeys}
+
+Brinkman Thesaurus, Brinkman onderwerpen - a lot of knowledge is spread throughout the KB on this controlled vocabulary of subjects. Read for instance this Plein post: \url{https://plein.kb.nl/thoughts/4290}.
+It is a hierarchical Thesaurus, albeit a rather shallow one. 
+
+The Brinkman Thesaurus is the most stable subject vocabulary in the KB, and the current standard for the cataloguing department. We use the Brinkeys assigned by cataloguers as gold labels to train on (see below). 
+
+In order to make Annif digest the thesaurus, it was transformed to a tsv-file that can be found here: \url{https://github.com/KBNLresearch/Annif-corpora/blob/master/my-corpora/brinkmanthesaurus_vocab.tsv}. 
+
 
 \subsection{Dissertations}
 
-\subsubsection{Input from repo's}
+The data stem from two origins: the repositories of the university libraries and the metadata as stored in ggc, the catalogue of the KB. Note that linking documents in those two sources was not trivial. There may be a few faulty links, and there are presumably quite some documents that could not be linked and are therefore not usable for our experiments. Still, a reasonable data set remains.
 
-Language dimension:\begin{itemize}
-\item English only
-\item Dutch only
-\item Mixed languages
-\end{itemize}
+\paragraph{The harvest} from the university repositories yielded both metadata and resources, which form the input to the model that we train. The nature and quality of the metadata and the format of the resources varies a lot between and also within universities, so obtaining useful data is not as easy as it may seem. 
 
-
+The metadata contain valuable information for this case such as title and abstract. Experiments can point out what parts of the (meta)data are most useful for the task at hand. One thing that we want to explore is the benefit of using full text, as compared to just abstract and other metadata. Using a random sample of the full text might very well form a useful compromise between training intensity and model performance. Table of contents is also known as a powerful feature for subject classification, but retrieving it may not be easy in all cases. 
 
 Features:\begin{itemize}
 \item Title and subtitle
@@ -55,21 +100,31 @@ Features:\begin{itemize}
 \item sample from full text
 \end{itemize}
 
+For the experiments, the data can be partitioned by filtering on language: how well does the model perform on single language versus mixed language? Note that the amount of data per language differs a lot, so in order to get comparable results some pruning needs to be done. Another thing that we cannot solve but must keep in mind, is that topics and language are presumably correlated: humanities dissertations are often written in Dutch, whereas in life sciences English is the standard. 
 
-Bij dissertaties komt de input van de UB's: onderwerpsontsluiting, titelinformatie, abstract e.d.
-Dit dient als input voor de analyse
-
-Bij boeken/ ebooks zou de Onyx-data als input kunnen dienen, naast full text/ flaptekst/ ...
-
+Language dimension:\begin{itemize}
+\item English only
+\item Dutch only
+\item Mixed languages (English, Dutch and other)
+\end{itemize}
 
 \subsection{Labels}
+The model is trained to predict subjects (Brinkeys) based on documents. The gold data, used both for training and evaluation, stems from the KB cataloguing department. For a selection of dissertations, human annotators applied Brinkeys to them. Note that this selection is far from random, some university/ fields are better represented than others.  
+
+\paragraph{The distribution} over Brinkeys is quite skewed and resembles a Zipfian distribution: few topics are assigned quite frequently, whereas most are assigned rarely (`long tail'). This is generally a hard problem for Machine Learning. 
+
+One thing to note, is that cataloguers are expected to pick as few labels as possible (preferably one to three) and have them be as specific as possible. Very broad subjects are thus not expected to be assigned, even though they do apply to a document.
+
+\paragraph{Agreement}
+Also important to keep in mind here, is that the Brinkeys are assigned by a single cataloguer. Experiments show that inter- and intra- annotator agreement on this kind of tasks is quite low: humans tend to not agree on what label should be applied. We can therefore not expect a machine to exactly match the somewhat trivial decisions of the annotator.  
+
 
 \subsection{Train/ test split}
-
+We worked on the predecessor of these experiments in a workshop, where a train/ test split was made that we will maintain (unless we decide otherwise). The document identifiers (both university identifier and ggc identifier/ ppn) for the train and test set can be found in the corpora repo: \url{https://github.com/KBNLresearch/Annif-corpora/blob/master/my-corpora/dissertaties/}, \verb|train_identifiers.csv| and \verb|test_identifiers.csv| respectively.
 
 \section{Experiments}
 
-\subsection{Selection of input features/ filters}
+\subsection{Selection of input features}
 \subsection{Inter and intra language}
 \subsection{Different back-ends}
 
@@ -83,15 +138,27 @@ Evaluation:
    - Compute recall and precision per-label: how much variability? Correlation with frequency of the labels?
    - Further look into NDCG (metric that takes rank into account)
 
-Open vragen/ problemen:
-- Hoe te evalueren? 
-  Quantitatief: (Variatie van) performance per class naast performance per document
-  Kwalitatief:  Menselijke kwaliteitsmeting/ toepasbaarheid in praktijk van catalogiseerders
-                Vraag: in hoeverre worden dissertaties nou nog gecatalogiseerd in de huidige werkstroom? In principe niet maar soms toch wel?
-- Hoe om te gaan met het taalprobleem? 
-  Bij dissertaties evident issue, in hoeverre geldt dit ook voor andere collecties/ stromen?
+
 
 \section{Results}
 
 - Correlation performance per label vs relative frequency of the label (per language?)
+
+
+
+\section{Open issues/ future work}
+
+\begin{itemize}
+    \item How to deal with the fact that the documents are written in multiple languages (not always indicated correctly in the metadata)? Should we even focus on this issue, or is it only relevant in this domain (dissertations/ scientific publications)?
+    \item How can we evaluate this task?\begin{itemize}
+        \item  Quantitative evaluation: Also measure (variance in) performance per class (next to performance per document)
+  
+        \item Qualitative evaluation:  \\
+            How does a human judge the suggestions?\\
+            How useful are the suggestions to a cataloguer?\\
+            Question: to what extent do we catalogue dissertations at the moment? In principle not, but there are items labeled in recent years.. (esp. Groningen) In other words: how fit is this case for human evaluation?
+    \end{itemize}            
+    \item What about other domains/ data sources? What metadata (Onyx, flaptekst, full text) is available to train on in those cases?
+    \item The focus was on Brinkeys so far, as we have data (gold labels) in this realm. To what extent could we look into other subject vocabularies, such as Thema? Can we map Brinkeys to Thema (if even for a subset of Brinkeys) so that we can extrapolate?
+\end{itemize}
 \end{document}
