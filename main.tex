@@ -1,0 +1,97 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage[a4paper]{geometry}
+
+\title{Annif 4 dissertations\\Experimenten met Annif bij de KB}
+\author{Sara Veldhoen}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\clearpage
+
+\section{Annif}
+
+\subsection{Projects}
+
+{\tt projects.cfg} contains settings per project (experimental setup)
+
+\subsection{Commands}
+
+loadvoc
+
+analyzedir
+
+
+
+\section{Data}
+
+
+\subsection{Brinkman Thesaurus}
+\subsubsection{Digestible for Annif}
+
+\subsection{Dissertations}
+
+\subsubsection{Input from repo's}
+
+Language dimension:\begin{itemize}
+\item English only
+\item Dutch only
+\item Mixed languages
+\end{itemize}
+
+
+
+Features:\begin{itemize}
+\item Title and subtitle
+\item Abstract
+\item department
+\item table of contents
+\item full text
+\item sample from full text
+\end{itemize}
+
+
+Bij dissertaties komt de input van de UB's: onderwerpsontsluiting, titelinformatie, abstract e.d.
+Dit dient als input voor de analyse
+
+Bij boeken/ ebooks zou de Onyx-data als input kunnen dienen, naast full text/ flaptekst/ ...
+
+
+\subsection{Labels}
+
+\subsection{Train/ test split}
+
+
+\section{Experiments}
+
+\subsection{Selection of input features/ filters}
+\subsection{Inter and intra language}
+\subsection{Different back-ends}
+
+
+\section{Evaluation}
+
+Evaluation:
+   - Macro/ micro averaged
+   - Recall @20 (Annif provides 'optimize' to choose optimal limit)
+   - Precision @3
+   - Compute recall and precision per-label: how much variability? Correlation with frequency of the labels?
+   - Further look into NDCG (metric that takes rank into account)
+
+Open vragen/ problemen:
+- Hoe te evalueren? 
+  Quantitatief: (Variatie van) performance per class naast performance per document
+  Kwalitatief:  Menselijke kwaliteitsmeting/ toepasbaarheid in praktijk van catalogiseerders
+                Vraag: in hoeverre worden dissertaties nou nog gecatalogiseerd in de huidige werkstroom? In principe niet maar soms toch wel?
+- Hoe om te gaan met het taalprobleem? 
+  Bij dissertaties evident issue, in hoeverre geldt dit ook voor andere collecties/ stromen?
+
+\section{Results}
+
+- Correlation performance per label vs relative frequency of the label (per language?)
+\end{document}
